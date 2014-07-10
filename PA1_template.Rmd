@@ -1,6 +1,11 @@
+---
+output:
+  html_document:
+    keep_md: yes
+---
 # Reproducible Research: Peer Assessment 1
 
-## constants
+## Constants
 ```{r constants}
 url <- 'https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip'
 zip_file <- 'activity.zip'
@@ -17,12 +22,30 @@ activity.df <- read.csv(csv_file)
 
 
 ## What is mean total number of steps taken per day?
+```{r total}
+steps_per_day <- with(activity.df, tapply(steps, date, sum, na.rm = T))
+hist(steps_per_day,
+     main = "Histogram of total steps per day",
+     xlab = "Total steps taken per day")
+mean_steps_per_day <- mean(steps_per_day)
+median_steps_per_day <- median(steps_per_day)
+```
 
-
+The mean total number of steps per day was `r mean_steps_per_day`, while the median was `r median_steps_per_day`.
 
 ## What is the average daily activity pattern?
+```{r activity_pattern}
+steps_per_interval <- with(activity.df, tapply(steps, interval, mean, na.rm = T))
+# TODO this plots indexes on the x-axis, but it would be better to show 
+plot(steps_per_interval, type = 'l',
+     main = 'Daily activity pattern',
+     xlab = '5-minute interval',
+     ylab = 'Average number of steps')
+max_steps <- max(steps_per_interval)
+max_interval <- names(which(steps_per_interval == max_steps))
+```
 
-
+The interval `r max_interval` contains the maximum number of steps (`r max_steps`) on average across all the days in the dataset.
 
 ## Imputing missing values
 
