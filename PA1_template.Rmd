@@ -1,7 +1,18 @@
 # Reproducible Research: Peer Assessment 1
 
+## constants
+```{r constants}
+url <- 'https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip'
+zip_file <- 'activity.zip'
+csv_file <- 'activity.csv'
+```
 
 ## Loading and preprocessing the data
+```{r load}
+if (!file.exists(zip_file)) download.file(url, zip_file, method = 'curl')
+if (!file.exists(csv_file)) unzip(zip_file)
+activity.df <- read.csv(csv_file)
+```
 
 
 
