@@ -5,50 +5,106 @@ output:
 ---
 # Reproducible Research: Peer Assessment 1
 
-## Constants
-```{r constants}
+## Loading and preprocessing the data
+
+```{r load}
+library(plyr)
+library(methods)
+library(ggplot2)
+
 url <- 'https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip'
 zip_file <- 'activity.zip'
 csv_file <- 'activity.csv'
-```
 
-## Loading and preprocessing the data
-```{r load}
 if (!file.exists(zip_file)) download.file(url, zip_file, method = 'curl')
 if (!file.exists(csv_file)) unzip(zip_file)
 activity.df <- read.csv(csv_file)
+
+activity.df$date <- as.Date(activity.df$date)
 ```
 
-
-
 ## What is mean total number of steps taken per day?
+
 ```{r total}
-steps_per_day <- with(activity.df, tapply(steps, date, sum, na.rm = T))
-hist(steps_per_day,
+days <- ddply(activity.df, 'date', summarise,
+              total_steps = sum(steps, na.rm = T))
+hist(days$total_steps, breaks = 20,
      main = "Histogram of total steps per day",
      xlab = "Total steps taken per day")
-mean_steps_per_day <- mean(steps_per_day)
-median_steps_per_day <- median(steps_per_day)
+```
+
+```{r mean}
+mean_steps_per_day <- mean(days$total_steps)
+median_steps_per_day <- median(days$total_steps)
 ```
 
 The mean total number of steps per day was `r mean_steps_per_day`, while the median was `r median_steps_per_day`.
 
 ## What is the average daily activity pattern?
+
 ```{r activity_pattern}
-steps_per_interval <- with(activity.df, tapply(steps, interval, mean, na.rm = T))
-# TODO this plots indexes on the x-axis, but it would be better to show 
-plot(steps_per_interval, type = 'l',
+intervals <- ddply(activity.df, 'interval', summarise,
+                   avg_steps = mean(steps, na.rm = T))
+plot(intervals$interval, intervals$avg_steps, type = 'l',
      main = 'Daily activity pattern',
-     xlab = '5-minute interval',
+     xlab = 'Interval',
      ylab = 'Average number of steps')
-max_steps <- max(steps_per_interval)
-max_interval <- names(which(steps_per_interval == max_steps))
+max_steps <- max(intervals$avg_steps)
+max_interval <- intervals[intervals$avg_steps == max_steps, 'interval']
 ```
 
 The interval `r max_interval` contains the maximum number of steps (`r max_steps`) on average across all the days in the dataset.
 
 ## Imputing missing values
 
+```{r missing_values}
+missing_count <- length(which(is.na(activity.df$steps)))
+```
+
+There are `r missing_count` rows where the number of steps is missing.
+
+```{r fill_missing}
+filled.df <- merge(activity.df, intervals)
+fill_steps <- function(row) {
+  if (is.na(row['steps'])) row['avg_steps']
+  else row['steps']
+}
+filled.df$steps_filled <- as.numeric(apply(filled.df, 1, fill_steps))
+```
+
+For further analysis, missing values were filled in by the mean number of steps for the respective 5-minute interval over the entire dataset.  This increased the total number of steps for the days with missing values, shifting the distribution to the center from the left.  The number days with high number (15000 or more) of steps taken did not increase.
+
+```{r filled_total}
+days2 <- ddply(filled.df, 'date', summarise,
+               total_steps = sum(steps_filled, na.rm = T))
+hist(days2$total_steps, breaks = 20,
+     main = "Histogram of total steps per day",
+     xlab = "Total steps taken per day")
+```
+
+```{r filled_mean}
+mean_steps_per_day2 <- mean(days2$total_steps)
+mean_increase <- mean_steps_per_day2 - mean_steps_per_day
+median_steps_per_day2 <- median(days2$total_steps)
+median_increase <- median_steps_per_day2 - median_steps_per_day
+```
+
+With missing values filled in, the mean total number of steps per day was `r format(mean_steps_per_day2)`, while the median was `r format(median_steps_per_day2)`.  Filling in missing values increased these statistics by `r mean_increase` and `r median_increase` respectively.
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r weekdays}
+filled.df$weekend <- factor(weekdays(filled.df$date) %in% c('Saturday', 'Sunday'),
+                            levels = c(F, T),
+                            labels = c('weekday', 'weekend'))
+weekend_intervals <- ddply(filled.df, c('weekend', 'interval'), summarise,
+                           avg_steps = mean(steps_filled))
+ggplot(weekend_intervals, aes(x=interval, y=avg_steps)) +
+    facet_grid(weekend ~ .) +
+    geom_line() +
+    xlab("Interval") +
+    ylab("Average number of steps")
+```
+
+Activity on weekends seems to start more gradually and is more uniform throughout the day than on weekdays.
