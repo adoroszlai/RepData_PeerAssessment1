@@ -28,9 +28,9 @@ activity.df$date <- as.Date(activity.df$date)
 ```{r total}
 days <- ddply(activity.df, 'date', summarise,
               total_steps = sum(steps, na.rm = T))
-hist(days$total_steps, breaks = 20,
-     main = "Histogram of total steps per day",
-     xlab = "Total steps taken per day")
+ggplot(days, aes(x=total_steps)) +
+  geom_histogram(binwidth = 1000, fill='white', colour='black') +
+  xlab("Total steps per day")
 ```
 
 ```{r mean}
@@ -77,9 +77,9 @@ For further analysis, missing values were filled in by the mean number of steps 
 ```{r filled_total}
 days2 <- ddply(filled.df, 'date', summarise,
                total_steps = sum(steps_filled, na.rm = T))
-hist(days2$total_steps, breaks = 20,
-     main = "Histogram of total steps per day",
-     xlab = "Total steps taken per day")
+ggplot(days2, aes(x=total_steps)) +
+  geom_histogram(binwidth = 1000, fill='white', colour='black') +
+  xlab("Total steps per day")
 ```
 
 ```{r filled_mean}
