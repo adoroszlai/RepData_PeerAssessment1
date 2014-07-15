@@ -246,10 +246,16 @@ max_interval &lt;- intervals[intervals$avg_steps == max_steps, &#39;interval&#39
 
 <h2>Imputing missing values</h2>
 
-<pre><code class="r">missing_count &lt;- length(which(is.na(activity.df$steps)))
+<pre><code class="r">missing_count &lt;- sum(is.na(activity.df$steps))
+na_per_day &lt;- ddply(activity.df, &#39;date&#39;, summarise, na_cnt = sum(is.na(steps)))
+days_with_na &lt;- nrow(subset(na_per_day, na_cnt &gt; 0, &#39;date&#39;))
+entirely_missing_days &lt;- nrow(subset(na_per_day, na_cnt == 288, &#39;date&#39;))
+partially_missing_days &lt;- nrow(subset(na_per_day, na_cnt &gt; 0 &amp; na_cnt &lt; 288, &#39;date&#39;))
 </code></pre>
 
-<p>There are 2304 rows where the number of steps is missing.</p>
+<p>There are 2304 rows where the number of steps is missing.  The number of days where at least one interval is missing (8) and the days where all intervals are missing (8) are the same, there are 0 partially missing days.</p>
+
+<p>Therefore missing values cannot be imputed by the mean number of steps for the day, since the mean for these days is not known.</p>
 
 <pre><code class="r">filled.df &lt;- merge(activity.df, intervals)
 fill_steps &lt;- function(row) {

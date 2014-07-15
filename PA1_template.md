@@ -70,10 +70,16 @@ The interval 835 contains the maximum number of steps (206.1698) on average acro
 
 
 ```r
-missing_count <- length(which(is.na(activity.df$steps)))
+missing_count <- sum(is.na(activity.df$steps))
+na_per_day <- ddply(activity.df, 'date', summarise, na_cnt = sum(is.na(steps)))
+days_with_na <- nrow(subset(na_per_day, na_cnt > 0, 'date'))
+entirely_missing_days <- nrow(subset(na_per_day, na_cnt == 288, 'date'))
+partially_missing_days <- nrow(subset(na_per_day, na_cnt > 0 & na_cnt < 288, 'date'))
 ```
 
-There are 2304 rows where the number of steps is missing.
+There are 2304 rows where the number of steps is missing.  The number of days where at least one interval is missing (8) and the days where all intervals are missing (8) are the same, there are 0 partially missing days.
+
+Therefore missing values cannot be imputed by the mean number of steps for the day, since the mean for these days is not known.
 
 
 ```r

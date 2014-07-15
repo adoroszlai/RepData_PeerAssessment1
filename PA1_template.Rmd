@@ -58,10 +58,16 @@ The interval `r max_interval` contains the maximum number of steps (`r max_steps
 ## Imputing missing values
 
 ```{r missing_values}
-missing_count <- length(which(is.na(activity.df$steps)))
+missing_count <- sum(is.na(activity.df$steps))
+na_per_day <- ddply(activity.df, 'date', summarise, na_cnt = sum(is.na(steps)))
+days_with_na <- nrow(subset(na_per_day, na_cnt > 0, 'date'))
+entirely_missing_days <- nrow(subset(na_per_day, na_cnt == 288, 'date'))
+partially_missing_days <- nrow(subset(na_per_day, na_cnt > 0 & na_cnt < 288, 'date'))
 ```
 
-There are `r missing_count` rows where the number of steps is missing.
+There are `r missing_count` rows where the number of steps is missing.  The number of days where at least one interval is missing (`r days_with_na`) and the days where all intervals are missing (`r entirely_missing_days`) are the same, there are `r partially_missing_days` partially missing days.
+
+Therefore missing values cannot be imputed by the mean number of steps for the day, since the mean for these days is not known.
 
 ```{r fill_missing}
 filled.df <- merge(activity.df, intervals)
